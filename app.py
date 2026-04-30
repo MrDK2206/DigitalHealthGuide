@@ -659,8 +659,9 @@ def api_status():
 
 
 if __name__ == "__main__":
-    app.logger.info(f"Starting app on port 5000")
+    port = int(os.getenv('PORT', 5000))
+    app.logger.info(f"Starting app on port {port}")
     app.logger.info(f"Groq enabled: {_env_bool('USE_GROQ_CHAT', 'true')}")
     app.logger.info(f"Backend status: {_backend_status()}")
     
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False)
