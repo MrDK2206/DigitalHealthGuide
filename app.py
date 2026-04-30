@@ -134,7 +134,7 @@ _DEVELOPER_DETAILS = {
         "Flask serves the UI pages and the /get API route.",
         "PDFs from Data/ are loaded, read, and split into chunks.",
         "Chunk retrieval happens locally first, then Pinecone if available.",
-        "Groq and OpenAI are optional fallbacks behind environment flags.",
+        "Groq is the LLM for generating responses.",
     ],
     "files": [
         "app.py controls routing, retrieval, and response generation.",
@@ -144,15 +144,16 @@ _DEVELOPER_DETAILS = {
         "templates/ and static/ contain the presentation layer.",
     ],
     "runtime": [
-        "The app runs on port 8080 locally by default.",
+        "The app runs on port 5000 locally by default.",
         "Render deployment uses gunicorn through the Procfile.",
         "The API is JSON-free on the frontend and returns plain text for chat replies.",
     ],
     "env": [
-        "PINECONE_API_KEY or PINECONE_KEY",
+        "PINECONE_API_KEY",
         "PINECONE_INDEX_NAME",
-        "USE_GROQ_CHAT and GROQ_API_KEY if Groq should be enabled",
-        "USE_OPENAI_CHAT and OPENAI_API_KEY if OpenAI should be enabled",
+        "GROQ_API_KEY",
+        "USE_GROQ_CHAT (default: true)",
+        "GROQ_MODEL_NAME (default: llama-3.1-8b-instant)",
     ],
 }
 
@@ -483,79 +484,43 @@ def _answer_query(query: str, top_k: int = 3) -> str:
         return _general_medical_fallback(query)
 
     groq_enabled = _env_bool("USE_GROQ_CHAT", "true")
-    openai_enabled = _env_bool("USE_OPENAI_CHAT", "true")
     groq_key = _first_env_value("GROQ_API_KEY", "GROQ_KEY")
-    openai_key = _first_env_value("OPENAI_API_KEY", "OPENAI_KEY")
 
-    groq_client = None
-    openai_client = None
-    if groq_enabled and groq_key:
-        try:
-            groq_client = OpenAI(api_key=groq_key, base_url="https://api.groq.com/openai/v1")
-        except Exception as e:
-            app.logger.error(f"Failed to initialize Groq client: {e}")
-    
-    if openai_enabled and openai_key:
-        try:
-            openai_client = OpenAI(api_key=openai_key)
-        except Exception as e:
-            app.logger.error(f"Failed to initialize OpenAI client: {e}")
+    if not groq_enabled or not groq_key:
+        app.logger.warning("Groq is disabled or API key is missing. Using fallback response.")
+        return _general_medical_fallback(query)
+
+    try:
+        groq_client = OpenAI(api_key=groq_key, base_url="https://api.groq.com/openai/v1")
+    except Exception as e:
+        app.logger.error(f"Failed to initialize Groq client: {e}")
+        return _general_medical_fallback(query)
 
     if not combined_context:
-        fallback = _general_medical_fallback(query)
-
-        if groq_client is not None:
-            try:
-                return _generate_general_response(
-                    groq_client,
-                    os.getenv("GROQ_MODEL_NAME", "llama-3.1-8b-instant"),
-                    query,
-                )
-            except Exception as e:
-                app.logger.warning(f"Groq fallback failed: {e}")
-
-        if openai_client is not None:
-            try:
-                return _generate_general_response(
-                    openai_client,
-                    os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini"),
-                    query,
-                )
-            except Exception as e:
-                app.logger.warning(f"OpenAI fallback failed: {e}")
-
-        return fallback
-
-    if groq_client is not None:
         try:
-            answer = _generate_from_context(
+            return _generate_general_response(
                 groq_client,
                 os.getenv("GROQ_MODEL_NAME", "llama-3.1-8b-instant"),
                 query,
-                combined_context,
             )
-            if _is_no_answer_response(answer) and _looks_like_general_medical_question(query):
-                return _general_medical_fallback(query)
-            return answer
         except Exception as e:
-            app.logger.warning(f"Groq context generation failed: {e}")
+            app.logger.warning(f"Groq fallback failed: {e}")
+            return _general_medical_fallback(query)
 
-    if openai_client is not None:
-        try:
-            answer = _generate_from_context(
-                openai_client,
-                os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini"),
-                query,
-                combined_context,
-            )
-            if _is_no_answer_response(answer) and _looks_like_general_medical_question(query):
-                return _general_medical_fallback(query)
-            return answer
-        except Exception as e:
-            app.logger.warning(f"OpenAI context generation failed: {e}")
-
-    snippet = _extract_best_snippet(query, contexts)
-    return f"Based on the uploaded documents: {snippet}"
+    try:
+        answer = _generate_from_context(
+            groq_client,
+            os.getenv("GROQ_MODEL_NAME", "llama-3.1-8b-instant"),
+            query,
+            combined_context,
+        )
+        if _is_no_answer_response(answer) and _looks_like_general_medical_question(query):
+            return _general_medical_fallback(query)
+        return answer
+    except Exception as e:
+        app.logger.warning(f"Groq context generation failed: {e}")
+        snippet = _extract_best_snippet(query, contexts)
+        return f"Based on the uploaded documents: {snippet}"
 
 
 @app.route("/")

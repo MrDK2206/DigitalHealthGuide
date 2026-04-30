@@ -71,9 +71,9 @@ jobs:
             -e PORT=5000 \
             -e PINECONE_INDEX_NAME="${{ secrets.PINECONE_INDEX_NAME }}" \
             -e PINECONE_API_KEY="${{ secrets.PINECONE_API_KEY }}" \
-            -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-            -e USE_OPENAI_CHAT="true" \
-            -e FLASK_DEBUG="false" \
+            -e GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}" \
+            -e USE_GROQ_CHAT="true" \
+            -e GROQ_MODEL_NAME="llama-3.1-8b-instant" \
             -p 5000:5000 \
             "${{ steps.login-ecr.outputs.registry }}"/"${{ secrets.ECR_REPO }}":latest
           sleep 3
