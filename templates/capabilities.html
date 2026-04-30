@@ -1,0 +1,39 @@
+{% extends "base.html" %} {% block content %}
+<section class="page-section intro-section">
+  <span class="eyebrow">Scope statement</span>
+  <h1>What DigiHealthGuide can do, and what it cannot.</h1>
+  <p class="lead-copy">
+    This page is written for users and reviewers, so the scope stays honest and
+    simple.
+  </p>
+</section>
+
+<section class="split-grid page-section">
+  <article class="content-card glass-card capability-card success">
+    <span class="card-kicker">Can do</span>
+    <ul class="feature-list">
+      {% for item in can_do %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  <article class="content-card glass-card capability-card danger">
+    <span class="card-kicker">Cannot do</span>
+    <ul class="feature-list">
+      {% for item in cannot_do %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+</section>
+
+<section class="page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">Practical note</span>
+    <p>
+      The best results come from clear source PDFs. If the answer is not in the
+      documents, DigiHealthGuide says so instead of inventing a response.
+    </p>
+  </article>
+</section>
+{% endblock %}

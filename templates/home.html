@@ -1,0 +1,199 @@
+{% extends "base.html" %} {% block content %}
+<section class="hero-grid page-section">
+  <div class="hero-copy hero-copy-home">
+    <span class="eyebrow">DigiHealthGuide</span>
+    <h1>Your medical chatbot home page, kept simple for users.</h1>
+    <p class="lead-copy">
+      Open the site, ask a question, and get an answer grounded in the uploaded
+      medical PDFs. The rest of the website explains the project clearly, but
+      the home page stays focused on the chatbot experience first.
+    </p>
+    <div class="action-row">
+      <a class="btn btn-brand btn-lg" href="{{ url_for('chat_page') }}"
+        >Open chat</a
+      >
+      <a class="btn btn-outline-light btn-lg" href="{{ url_for('developers') }}"
+        >See developer details</a
+      >
+    </div>
+    <div class="pill-row">
+      {% for item in highlights %}
+      <span>{{ item }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <aside class="hero-panel">
+    <div class="hero-lockup">
+      <span class="brand-mark brand-mark-large">
+        <img src="{{ logo_url }}" alt="DigiHealthGuide logo" />
+      </span>
+      <div>
+        <div class="eyebrow mb-1">About the chatbot</div>
+        <h2>DigiHealthGuide answers from source PDFs, not from guesswork.</h2>
+      </div>
+    </div>
+    <div class="info-block">
+      <h3>What a user gets</h3>
+      <p>
+        A clean, friendly chat interface with document-backed answers, a safe
+        fallback if the answer is missing, and a presentation that feels like a
+        real product instead of a classroom mockup.
+      </p>
+    </div>
+    <div class="stat-grid">
+      <article class="stat-card">
+        <strong>Fast</strong><span>Simple entry point</span>
+      </article>
+      <article class="stat-card">
+        <strong>Grounded</strong><span>Answers from PDFs</span>
+      </article>
+      <article class="stat-card">
+        <strong>Safe</strong><span>No invented facts</span>
+      </article>
+      <article class="stat-card">
+        <strong>Deployable</strong><span>Works with Flask</span>
+      </article>
+    </div>
+  </aside>
+</section>
+
+<section class="split-grid page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">How users use it</span>
+    <h2>Three simple steps</h2>
+    <div class="feature-row user-step-row">
+      {% for item in user_steps %}
+      <div class="feature-tile">
+        <strong>{{ item.title }}</strong>
+        <p>{{ item.text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="content-card glass-card">
+    <span class="card-kicker">Quick explanation</span>
+    <h2>What this chatbot is for</h2>
+    <ul class="feature-list">
+      {% for item in user_benefits %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+</section>
+
+<section class="demo-grid page-section">
+  <article class="content-card glass-card demo-panel">
+    <span class="card-kicker">Try it here</span>
+    <h2>Live chatbot demo on the home page</h2>
+    <p>
+      This is the main interaction you want users to see first. Type a question
+      and the bot will respond from the uploaded documents or a safe fallback.
+    </p>
+
+    <div id="demoFeed" class="demo-feed">
+      <div class="demo-message demo-bot">
+        Hello. Ask me a medical question and I’ll answer using the available
+        context.
+      </div>
+    </div>
+
+    <div class="prompt-list demo-prompts">
+      {% for prompt in demo_prompts %}
+      <button
+        class="prompt-chip demo-chip"
+        type="button"
+        data-demo-prompt="{{ prompt }}"
+      >
+        {{ prompt }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <form id="demoForm" class="chat-form demo-form" autocomplete="off">
+      <input
+        type="text"
+        id="demoInput"
+        class="chat-input"
+        placeholder="Ask something about the uploaded PDFs..."
+        required
+      />
+      <button type="submit" class="btn btn-brand chat-submit">Ask</button>
+    </form>
+  </article>
+
+  <aside class="content-card glass-card demo-panel">
+    <span class="card-kicker">Important limits</span>
+    <h2>What the chatbot should not be used for</h2>
+    <ul class="feature-list">
+      {% for item in user_limits %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+    <p>
+      For the project story, that makes the app honest, professional, and easy
+      to explain in a resume or demo interview.
+    </p>
+  </aside>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const demoForm = document.getElementById("demoForm");
+    const demoFeed = document.getElementById("demoFeed");
+    const demoInput = document.getElementById("demoInput");
+
+    const timeStamp = () =>
+      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    const pushMessage = (text, kind) => {
+      const message = document.createElement("div");
+      message.className = `demo-message demo-${kind}`;
+      message.textContent = `${text} · ${timeStamp()}`;
+      demoFeed.appendChild(message);
+      demoFeed.scrollTop = demoFeed.scrollHeight;
+    };
+
+    const ask = async (text) => {
+      pushMessage(text, "user");
+      const pending = document.createElement("div");
+      pending.className = "demo-message demo-bot demo-pending";
+      pending.textContent = "Thinking...";
+      demoFeed.appendChild(pending);
+      demoFeed.scrollTop = demoFeed.scrollHeight;
+
+      try {
+        const response = await fetch('{{ url_for("chat") }}', {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ msg: text }),
+        });
+        const reply = await response.text();
+        pending.remove();
+        pushMessage(reply, "bot");
+      } catch (error) {
+        pending.remove();
+        pushMessage("Unable to reach the backend right now.", "bot");
+      }
+    };
+
+    demoForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = demoInput.value.trim();
+      if (!text) return;
+      demoInput.value = "";
+      await ask(text);
+    });
+
+    document.querySelectorAll("[data-demo-prompt]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const text = button.getAttribute("data-demo-prompt");
+        if (!text) return;
+        demoInput.value = text;
+        await ask(text);
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="{{ page_description }}" />
+    <meta name="theme-color" content="#23374A" />
+    <title>{{ page_title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="site-backdrop"></div>
+    <header class="navbar navbar-expand-lg navbar-dark site-header">
+      <div class="container-fluid page-shell">
+        <a
+          class="navbar-brand d-flex align-items-center gap-3"
+          href="{{ url_for('home') }}"
+        >
+          <span class="brand-mark">
+            <img src="{{ logo_url }}" alt="DigiHealthGuide logo" />
+          </span>
+          <span class="brand-copy">
+            <strong>{{ site_name }}</strong>
+          </span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#siteNav"
+          aria-controls="siteNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="siteNav">
+          <nav class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+            {% for item in nav_items %}
+            <a
+              class="nav-link {% if active_page == item.page %}active{% endif %}"
+              href="{{ item.href }}"
+              >{{ item.label }}</a
+            >
+            {% endfor %}
+            <a class="btn btn-brand ms-lg-3" href="{{ url_for('chat_page') }}"
+              >Open Chat</a
+            >
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-shell main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="page-shell footer-grid">
+        <div>
+          <div class="footer-brand">{{ site_name }}</div>
+          <p>
+            Grounded, document-based medical guidance for a responsive web demo.
+          </p>
+        </div>
+        <div>
+          <div class="footer-heading">Explore</div>
+          <div class="footer-links">
+            {% for item in nav_items %}
+            <a href="{{ item.href }}">{{ item.label }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <div class="footer-heading">Operational note</div>
+          <p>
+            This project is built for document-grounded guidance and
+            demonstration purposes. It is not a replacement for clinical care.
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

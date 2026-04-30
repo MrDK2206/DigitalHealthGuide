@@ -1,0 +1,154 @@
+{% extends "base.html" %} {% block content %}
+<section class="hero-grid page-section">
+  <div class="hero-copy">
+    <span class="eyebrow">For developers</span>
+    <h1>Technical understanding of the entire project.</h1>
+    <p class="lead-copy">
+      This page explains the backend, data flow, environment variables, runtime
+      behavior, and deployment assumptions in enough detail for a developer to
+      understand the system without reading every source file first.
+    </p>
+    <div class="action-row">
+      <a class="btn btn-brand btn-lg" href="{{ url_for('chat_page') }}"
+        >Open the chat API</a
+      >
+      <a class="btn btn-outline-light btn-lg" href="{{ url_for('home') }}"
+        >Back to user home</a
+      >
+    </div>
+    <div class="pill-row">
+      <span>Flask routes</span>
+      <span>Retrieval flow</span>
+      <span>Deployment notes</span>
+    </div>
+  </div>
+
+  <aside class="hero-panel">
+    <div class="hero-lockup">
+      <span class="brand-mark brand-mark-large">
+        <img src="{{ logo_url }}" alt="DigiHealthGuide logo" />
+      </span>
+      <div>
+        <div class="eyebrow mb-1">Implementation view</div>
+        <h2>
+          Useful when you want to explain how the project works under the hood.
+        </h2>
+      </div>
+    </div>
+    <div class="info-block">
+      <h3>Request lifecycle</h3>
+      <p>
+        The UI sends a POST request to /get, the backend builds context from
+        local chunks or Pinecone, then the bot returns plain text for the
+        frontend to display.
+      </p>
+    </div>
+  </aside>
+</section>
+
+<section class="split-grid page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">Architecture</span>
+    <ul class="feature-list">
+      {% for item in developer_details.architecture %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  <article class="content-card glass-card">
+    <span class="card-kicker">Project files</span>
+    <ul class="feature-list">
+      {% for item in developer_details.files %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+</section>
+
+<section class="split-grid page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">Runtime behavior</span>
+    <ul class="feature-list">
+      {% for item in developer_details.runtime %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  <article class="content-card glass-card">
+    <span class="card-kicker">Environment variables</span>
+    <ul class="feature-list">
+      {% for item in developer_details.env %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+</section>
+
+<section class="page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">Detailed flow</span>
+    <div class="workflow-grid developer-flow-grid">
+      <div class="workflow-step">
+        <strong>1. Load inputs</strong>
+        <p>
+          PDF files are collected from Data/ and turned into document objects.
+        </p>
+      </div>
+      <div class="workflow-step">
+        <strong>2. Split text</strong>
+        <p>
+          Long documents are chunked with overlap so a query can match a
+          relevant passage reliably.
+        </p>
+      </div>
+      <div class="workflow-step">
+        <strong>3. Score context</strong>
+        <p>
+          The backend scores local chunks first and only falls back to Pinecone
+          if needed.
+        </p>
+      </div>
+      <div class="workflow-step">
+        <strong>4. Generate answer</strong>
+        <p>
+          Groq or OpenAI are optional and are used only after the document
+          context has been assembled.
+        </p>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="split-grid page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">Good engineering choices</span>
+    <ul class="feature-list">
+      <li>The app does not require online model access to start the site.</li>
+      <li>
+        Local retrieval makes the project useful even when API keys are missing.
+      </li>
+      <li>
+        The frontend communicates with the backend through a simple text
+        response.
+      </li>
+      <li>
+        Render deployment is straightforward because the project includes
+        gunicorn and a Procfile.
+      </li>
+    </ul>
+  </article>
+  <article class="content-card glass-card">
+    <span class="card-kicker">What to tell a reviewer</span>
+    <p>
+      This is a Flask-based retrieval chatbot for medical PDFs. It demonstrates
+      document ingestion, local semantic matching, optional vector search, model
+      fallback strategy, and a clean UI layered on top of the backend.
+    </p>
+    <p>
+      That is the strongest technical summary for interviews or portfolio
+      presentations because it explains both the value and the implementation
+      tradeoffs.
+    </p>
+  </article>
+</section>
+{% endblock %}

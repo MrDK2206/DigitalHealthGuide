@@ -1,0 +1,32 @@
+{% extends "base.html" %} {% block content %}
+<section class="page-section intro-section">
+  <span class="eyebrow">System flow</span>
+  <h1>How DigiHealthGuide works in simple terms.</h1>
+  <p class="lead-copy">
+    This page explains the user-facing flow in plain English: ask a question,
+    search the documents, and return a grounded answer if the source content
+    supports it.
+  </p>
+</section>
+
+<section class="timeline-grid page-section">
+  {% for step in steps %}
+  <article class="timeline-card glass-card">
+    <div class="timeline-index">0{{ loop.index }}</div>
+    <h2>{{ step.title }}</h2>
+    <p>{{ step.text }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">Simple summary</span>
+    <p>
+      Think of the system as a search-and-answer pipeline. It starts with your
+      medical PDFs and uses them first before any optional model fallback is
+      used.
+    </p>
+  </article>
+</section>
+{% endblock %}

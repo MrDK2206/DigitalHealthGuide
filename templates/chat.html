@@ -1,0 +1,169 @@
+{% extends "base.html" %} {% block content %}
+<section class="page-section intro-section chat-intro">
+  <span class="eyebrow">Live assistant</span>
+  <h1>Chat with the medical documents.</h1>
+  <p class="lead-copy">
+    This page is the working assistant. It is separate from the home page so the
+    main site stays simple for users while chat stays focused on conversation.
+  </p>
+</section>
+
+<section class="chat-layout page-section">
+  <aside class="chat-sidebar glass-card">
+    <div
+      class="status-banner {% if backend_status.ready %}ready{% else %}not-ready{% endif %}"
+    >
+      <strong
+        >{% if backend_status.ready %}Backend ready{% else %}Backend not fully
+        configured{% endif %}</strong
+      >
+      <p>{{ backend_status.message }}</p>
+    </div>
+
+    <div class="info-block">
+      <h2>Try questions like</h2>
+      <div class="prompt-list">
+        {% for prompt in sample_prompts %}
+        <button class="prompt-chip" type="button" data-prompt="{{ prompt }}">
+          {{ prompt }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="info-block">
+      <h2>How to use it</h2>
+      <ul class="feature-list compact">
+        <li>Upload medical PDFs to Data/</li>
+        <li>Run python store_index.py</li>
+        <li>Start the app and ask questions here</li>
+      </ul>
+    </div>
+  </aside>
+
+  <div class="chat-window glass-card">
+    <div id="messageFormeight" class="chat-messages">
+      <div class="chat-message bot-message">
+        <div class="avatar bot-avatar">D</div>
+        <div class="message-body">
+          <div class="message-text">
+            Hello. Ask me about the uploaded medical documents, and I’ll answer
+            using the available context.
+          </div>
+          <div class="message-meta">Ready to help</div>
+        </div>
+      </div>
+    </div>
+
+    <form id="messageArea" class="chat-form" autocomplete="off">
+      <input
+        type="text"
+        id="text"
+        name="msg"
+        class="chat-input"
+        placeholder="Ask a question about the documents..."
+        required
+      />
+      <button type="submit" class="btn btn-brand chat-submit">Send</button>
+    </form>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const messageArea = document.getElementById("messageArea");
+    const messageFeed = document.getElementById("messageFormeight");
+    const input = document.getElementById("text");
+
+    const formatTime = () => {
+      const date = new Date();
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const appendMessage = (text, kind) => {
+      const wrapper = document.createElement("div");
+      wrapper.className = `chat-message ${kind}-message`;
+
+      const avatar = document.createElement("div");
+      avatar.className = `avatar ${kind}-avatar`;
+      avatar.textContent = kind === "user" ? "U" : "D";
+
+      const body = document.createElement("div");
+      body.className = "message-body";
+
+      const messageText = document.createElement("div");
+      messageText.className = "message-text";
+      messageText.textContent = text;
+
+      const messageMeta = document.createElement("div");
+      messageMeta.className = "message-meta";
+      messageMeta.textContent = formatTime();
+
+      body.appendChild(messageText);
+      body.appendChild(messageMeta);
+
+      wrapper.appendChild(avatar);
+      wrapper.appendChild(body);
+      messageFeed.appendChild(wrapper);
+      messageFeed.scrollTop = messageFeed.scrollHeight;
+    };
+
+    const submitQuery = async (text) => {
+      appendMessage(text, "user");
+
+      const typing = document.createElement("div");
+      typing.className = "chat-message bot-message typing-state";
+      typing.innerHTML =
+        '<div class="avatar bot-avatar">D</div><div class="message-body"><div class="message-text">Thinking...</div></div>';
+      messageFeed.appendChild(typing);
+      messageFeed.scrollTop = messageFeed.scrollHeight;
+
+      try {
+        const response = await fetch('{{ url_for("chat") }}', {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ msg: text }),
+        });
+
+        const reply = await response.text();
+        typing.remove();
+        appendMessage(reply, "bot");
+      } catch (error) {
+        typing.remove();
+        appendMessage(
+          "Failed to reach the assistant. Please try again.",
+          "bot",
+        );
+      }
+    };
+
+    messageArea.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = input.value.trim();
+      if (!text) {
+        return;
+      }
+      input.value = "";
+      await submitQuery(text);
+    });
+
+    document.querySelectorAll("[data-prompt]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const text = button.getAttribute("data-prompt");
+        if (!text) {
+          return;
+        }
+        input.value = text;
+        await submitQuery(text);
+      });
+    });
+  });
+</script>
+{% endblock %}<link
+  href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"
+  rel="stylesheet"
+  id="bootstrap-css"
+/>

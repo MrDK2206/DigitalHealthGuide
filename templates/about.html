@@ -1,0 +1,45 @@
+{% extends "base.html" %} {% block content %}
+<section class="page-section intro-section">
+  <span class="eyebrow">About the project</span>
+  <h1>What DigiHealthGuide is built to do.</h1>
+  <p class="lead-copy">
+    DigiHealthGuide is a simple medical chatbot website for users who want
+    document-backed answers without needing to understand the implementation
+    first.
+  </p>
+</section>
+
+<section class="split-grid page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">Who it is for</span>
+    <ul class="feature-list">
+      {% for item in audience %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  <article class="content-card glass-card">
+    <span class="card-kicker">What it adds</span>
+    <p>
+      The website is structured to feel like a real project: users get a clean
+      home page, a clear chatbot flow, and simple support pages that explain the
+      product without overwhelming them.
+    </p>
+    <p>
+      The developer-specific explanation lives separately, so the user pages
+      stay focused and lightweight.
+    </p>
+  </article>
+</section>
+
+<section class="page-section">
+  <article class="content-card glass-card">
+    <span class="card-kicker">Resume bullets</span>
+    <div class="two-column-list">
+      {% for item in resume_points %}
+      <div class="bullet-card">{{ item }}</div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}
