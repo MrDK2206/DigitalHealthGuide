@@ -7,6 +7,10 @@ from pinecone import Pinecone, ServerlessSpec
 from src.helper import load_pdf_file, text_split, embed_texts, build_id
 
 
+PROJECT_ROOT = Path(__file__).resolve().parent
+DATA_DIR = PROJECT_ROOT / "Data"
+
+
 def get_env_value(*names):
     for name in names:
         value = os.getenv(name)
@@ -22,7 +26,7 @@ load_dotenv()
 PINECONE_API_KEY = get_env_value("PINECONE_API_KEY", "PINECONE_KEY")
 os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
 
-data_directory = Path("Data")
+data_directory = DATA_DIR
 if not data_directory.exists():
     raise FileNotFoundError("The Data/ directory is missing. Add the source PDFs before building the index.")
 

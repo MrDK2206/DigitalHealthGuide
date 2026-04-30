@@ -27,6 +27,8 @@ app.logger.setLevel(logging.INFO)
 
 SITE_NAME = "DigiHealthGuide"
 LOGO_URL = "https://i.ibb.co/4RJcK36H/Untitled-design.png"
+PROJECT_ROOT = Path(__file__).resolve().parent
+DATA_DIR = PROJECT_ROOT / "Data"
 
 _GREETING_WORDS = {"hi", "hii", "hey", "hello", "hullo", "yo"}
 _QUERY_EXPANSIONS = {
@@ -288,11 +290,10 @@ def _looks_like_general_medical_question(query: str) -> bool:
 
 @lru_cache(maxsize=1)
 def _load_local_chunks() -> list[dict]:
-    data_dir = Path("Data")
-    if not data_dir.exists():
+    if not DATA_DIR.exists():
         return []
 
-    docs = load_pdf_file(data_dir=str(data_dir))
+    docs = load_pdf_file(data_dir=str(DATA_DIR))
     if not docs:
         return []
 
