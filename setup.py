@@ -10,8 +10,8 @@ setup(
         "flask>=2.2.0",
         "python-dotenv>=1.0.1",
         "pypdf>=3.8.0",
-        "openai>=0.27.0",
-        "pinecone>=2.2.2",
+        "openai>=1.0.0",
+        "pinecone>=8.0.0",
         "tqdm>=4.0.0",
     ]
 

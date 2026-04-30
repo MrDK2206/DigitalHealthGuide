@@ -2,7 +2,7 @@ import os
 import time
 from pathlib import Path
 from dotenv import load_dotenv
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import Pinecone
 
 from src.helper import load_pdf_file, text_split, embed_texts, build_id
 
@@ -23,7 +23,7 @@ def get_env_value(*names):
 
 load_dotenv()
 
-PINECONE_API_KEY = get_env_value("PINECONE_API_KEY", "PINECONE_KEY")
+PINECONE_API_KEY = get_env_value("PINECONE_API_KEY")
 os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
 
 data_directory = DATA_DIR
@@ -48,17 +48,7 @@ existing = pc.list_indexes().names()
 
 if index_name not in existing:
     dim = len(embeddings[0]) if embeddings else 1536
-    pinecone_env = os.getenv("PINECONE_ENVIRONMENT")
-    if pinecone_env:
-        cloud = os.getenv("PINECONE_CLOUD", "aws")
-        pc.create_index(
-            name=index_name,
-            dimension=dim,
-            metric="cosine",
-            spec=ServerlessSpec(cloud=cloud, region=pinecone_env),
-        )
-    else:
-        pc.create_index(name=index_name, dimension=dim, metric="cosine")
+    pc.create_index(name=index_name, dimension=dim, metric="cosine")
 
 
 def wait_for_index_ready(name: str, poll_interval: float = 2.0, timeout_seconds: int = 300):

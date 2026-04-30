@@ -28,5 +28,5 @@ python app.py
 
 - Keep your `.env` file in the project root.
 - Keep `USE_GROQ_CHAT=true` if you want Groq to be used first.
-- Keep `USE_OPENAI_CHAT=true` if you want OpenAI as the second fallback.
-- If you want a document-only chatbot, set both chat flags to `false`.
+- If you want a document-only chatbot, set `USE_GROQ_CHAT=false`.
+- The project only reads these five environment variables: `PINECONE_API_KEY`, `PINECONE_INDEX_NAME`, `GROQ_API_KEY`, `USE_GROQ_CHAT`, and `GROQ_MODEL_NAME`.

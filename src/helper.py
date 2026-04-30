@@ -5,7 +5,6 @@ from pypdf import PdfReader
 import hashlib
 import math
 import re
-from openai import OpenAI
 
 
 load_dotenv()
@@ -48,13 +47,6 @@ def text_split(docs: List[Dict], chunk_size: int = 500, overlap: int = 50) -> Li
             if start < 0:
                 start = 0
     return chunks
-
-
-def _openai_client():
-    key = os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_KEY")
-    if not key:
-        raise RuntimeError("Missing OpenAI API key. Set OPENAI_API_KEY or OPENAI_KEY in environment or .env")
-    return OpenAI(api_key=key)
 
 
 def _local_embedding(text: str, dimensions: int = 384) -> List[float]:

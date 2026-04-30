@@ -362,7 +362,7 @@ def _rank_local_chunks(query: str, limit: int = 5) -> list[str]:
 
 
 def _backend_status() -> dict:
-    pinecone_key = _first_env_value("PINECONE_API_KEY", "PINECONE_KEY")
+    pinecone_key = _first_env_value("PINECONE_API_KEY")
     index_name = os.getenv("PINECONE_INDEX_NAME", "medicalbot")
 
     if not pinecone_key:
@@ -399,7 +399,7 @@ def _pinecone_index():
     if not status["ready"]:
         return None
 
-    pinecone_key = _first_env_value("PINECONE_API_KEY", "PINECONE_KEY")
+    pinecone_key = _first_env_value("PINECONE_API_KEY")
     index_name = os.getenv("PINECONE_INDEX_NAME", "medicalbot")
     pc = Pinecone(api_key=pinecone_key)
     return pc.Index(index_name)
@@ -484,7 +484,7 @@ def _answer_query(query: str, top_k: int = 3) -> str:
         return _general_medical_fallback(query)
 
     groq_enabled = _env_bool("USE_GROQ_CHAT", "true")
-    groq_key = _first_env_value("GROQ_API_KEY", "GROQ_KEY")
+    groq_key = _first_env_value("GROQ_API_KEY")
 
     if not groq_enabled or not groq_key:
         app.logger.warning("Groq is disabled or API key is missing. Using fallback response.")

@@ -7,13 +7,13 @@ A Flask-based medical chatbot that answers questions from PDFs stored in the `Da
 - Reads medical PDFs from `Data/`
 - Splits text into chunks and builds a vector index in Pinecone
 - Answers user questions using the most relevant document snippets
-- Optionally uses Groq chat first, OpenAI second, and a document snippet fallback last
+- Uses Groq chat when enabled, then falls back to a safe document-grounded response
 
 ## Current Behavior
 
 - Default mode is document-grounded only
-- The bot does not need any online chat API key to run the local retrieval flow
-- Groq chat is optional and enabled by default when `GROQ_API_KEY` is present
+- The app only reads these five environment variables
+- Groq chat is enabled when `USE_GROQ_CHAT=true` and `GROQ_API_KEY` is present
 - If a question is not covered by the uploaded PDFs, the bot says it could not find the answer in the documents
 
 ## Requirements
@@ -24,8 +24,7 @@ A Flask-based medical chatbot that answers questions from PDFs stored in the `Da
 
 Optional:
 
-- Groq API key, only if you want to enable online chat fallback
-- OpenAI API key, only if you want a second online fallback
+- The Groq settings listed below if you want the live chat fallback
 
 ## Setup
 
@@ -48,22 +47,19 @@ pip install -r requirements.txt
 PINECONE_API_KEY=your_pinecone_key
 PINECONE_INDEX_NAME=medicalbot
 
-# Optional, only needed for Pinecone serverless index creation
-# PINECONE_ENVIRONMENT=us-east1-gcp
-# PINECONE_CLOUD=aws
-
-# Optional, only if you want Groq chat fallback
+# Required for live chat fallback
 # GROQ_API_KEY=your_groq_key
 # USE_GROQ_CHAT=true
 # GROQ_MODEL_NAME=llama-3.1-8b-instant
-
-# Optional, second online fallback
-# OPENAI_API_KEY=your_openai_key
-# USE_OPENAI_CHAT=true
-# OPENAI_MODEL_NAME=gpt-4o-mini
 ```
 
-The code also accepts `PINECONE_KEY`, `GROQ_KEY`, and `OPENAI_KEY` as aliases.
+The app is now configured for only these 5 environment variables:
+
+- `PINECONE_API_KEY`
+- `PINECONE_INDEX_NAME`
+- `GROQ_API_KEY`
+- `USE_GROQ_CHAT`
+- `GROQ_MODEL_NAME`
 
 ## Build the Index
 
@@ -84,7 +80,7 @@ python app.py
 
 Open:
 
-- http://127.0.0.1:8080
+- http://127.0.0.1:5000
 
 ## How Answers Work
 
@@ -92,21 +88,21 @@ Open:
 2. The app first searches the extracted PDF text directly for the best matching document chunk.
 3. If needed, Pinecone returns the closest document chunks.
 4. The app extracts the best matching snippet from those chunks.
-5. If `USE_GROQ_CHAT=true`, the app tries Groq first, then OpenAI if Groq fails, and finally falls back to the document snippet.
+5. If `USE_GROQ_CHAT=true`, the app tries Groq first and falls back to a safe document-guided response if the model is unavailable.
 
 ## Troubleshooting
 
 - If `store_index.py` says no PDFs were found, make sure `Data/` contains one or more `.pdf` files.
-- If Pinecone cannot connect, verify `PINECONE_API_KEY` and, for serverless index creation, `PINECONE_ENVIRONMENT`.
+- If Pinecone cannot connect, verify `PINECONE_API_KEY` and that your Pinecone index exists.
 - If the app returns a document snippet that looks unrelated, add better source PDFs or rerun `python store_index.py` after updating the `Data/` folder.
-- If you want the app to stay strictly in-document, keep both `USE_GROQ_CHAT=false` and `USE_OPENAI_CHAT=false`.
+- If you want the app to stay strictly in-document, set `USE_GROQ_CHAT=false`.
 
 ## Project Structure
 
 - `app.py` - Flask app and question answering route
 - `store_index.py` - Builds the Pinecone index from the PDFs
 - `src/helper.py` - PDF loading, chunking, and embedding helpers
-- `src/prompt.py` - Optional prompt used only when online chat fallback is enabled
+- `src/prompt.py` - Prompt used when Groq chat is enabled
 - `templates/chat.html` - Frontend chat page
 - `static/style.css` - Frontend styling
 
