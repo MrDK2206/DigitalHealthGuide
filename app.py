@@ -406,9 +406,14 @@ def _pinecone_index():
 
 
 def _build_contexts(query: str, top_k: int = 3) -> list[str]:
-    local_contexts = _rank_local_chunks(query)
-    if local_contexts:
-        return local_contexts
+    # Skip local chunks on production (Render) to save memory
+    # Pinecone already has all indexed data, so we don't need to reload PDFs
+    use_local = os.getenv("USE_LOCAL_CHUNKS", "false").lower() in {"true", "1", "yes"}
+    
+    if use_local:
+        local_contexts = _rank_local_chunks(query)
+        if local_contexts:
+            return local_contexts
 
     pinecone_index = _pinecone_index()
     if pinecone_index is None:
