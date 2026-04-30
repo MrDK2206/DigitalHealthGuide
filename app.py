@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 from difflib import get_close_matches
 from functools import lru_cache
 from pathlib import Path
@@ -14,7 +15,15 @@ from src.helper import embed_texts, load_pdf_file, text_split
 
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 
 SITE_NAME = "DigiHealthGuide"
 LOGO_URL = "https://i.ibb.co/4RJcK36H/Untitled-design.png"
@@ -355,23 +364,31 @@ def _backend_status() -> dict:
     index_name = os.getenv("PINECONE_INDEX_NAME", "medicalbot")
 
     if not pinecone_key:
+        msg = "Set PINECONE_API_KEY and PINECONE_INDEX_NAME to enable live document retrieval."
+        app.logger.warning(msg)
         return {
             "ready": False,
-            "message": "Set PINECONE_API_KEY and PINECONE_INDEX_NAME to enable live document retrieval.",
+            "message": msg,
         }
 
     try:
         pc = Pinecone(api_key=pinecone_key)
         index_names = pc.list_indexes().names()
         if index_name not in index_names:
+            msg = f"Pinecone connected, but the '{index_name}' index is missing. Run python store_index.py first."
+            app.logger.warning(msg)
             return {
                 "ready": False,
-                "message": f"Pinecone connected, but the '{index_name}' index is missing. Run python store_index.py first.",
+                "message": msg,
             }
     except Exception as exc:
-        return {"ready": False, "message": f"Pinecone is unavailable right now: {exc}"}
+        msg = f"Pinecone is unavailable: {str(exc)}"
+        app.logger.error(msg)
+        return {"ready": False, "message": msg}
 
-    return {"ready": True, "message": f"Connected to the '{index_name}' Pinecone index."}
+    success_msg = f"Connected to the '{index_name}' Pinecone index."
+    app.logger.info(success_msg)
+    return {"ready": True, "message": success_msg}
 
 
 @lru_cache(maxsize=1)
@@ -453,7 +470,12 @@ def _answer_query(query: str, top_k: int = 3) -> str:
     if _is_greeting(query):
         return _general_medical_fallback(query)
 
-    contexts = _build_contexts(query, top_k=top_k)
+    try:
+        contexts = _build_contexts(query, top_k=top_k)
+    except Exception as e:
+        app.logger.error(f"Error building contexts: {e}", exc_info=True)
+        contexts = []
+    
     combined_context = "\n---\n".join(contexts)
 
     if not combined_context and _looks_like_general_medical_question(query):
@@ -467,9 +489,16 @@ def _answer_query(query: str, top_k: int = 3) -> str:
     groq_client = None
     openai_client = None
     if groq_enabled and groq_key:
-        groq_client = OpenAI(api_key=groq_key, base_url="https://api.groq.com/openai/v1")
+        try:
+            groq_client = OpenAI(api_key=groq_key, base_url="https://api.groq.com/openai/v1")
+        except Exception as e:
+            app.logger.error(f"Failed to initialize Groq client: {e}")
+    
     if openai_enabled and openai_key:
-        openai_client = OpenAI(api_key=openai_key)
+        try:
+            openai_client = OpenAI(api_key=openai_key)
+        except Exception as e:
+            app.logger.error(f"Failed to initialize OpenAI client: {e}")
 
     if not combined_context:
         fallback = _general_medical_fallback(query)
@@ -481,8 +510,8 @@ def _answer_query(query: str, top_k: int = 3) -> str:
                     os.getenv("GROQ_MODEL_NAME", "llama-3.1-8b-instant"),
                     query,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                app.logger.warning(f"Groq fallback failed: {e}")
 
         if openai_client is not None:
             try:
@@ -491,8 +520,8 @@ def _answer_query(query: str, top_k: int = 3) -> str:
                     os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini"),
                     query,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                app.logger.warning(f"OpenAI fallback failed: {e}")
 
         return fallback
 
@@ -507,8 +536,8 @@ def _answer_query(query: str, top_k: int = 3) -> str:
             if _is_no_answer_response(answer) and _looks_like_general_medical_question(query):
                 return _general_medical_fallback(query)
             return answer
-        except Exception:
-            pass
+        except Exception as e:
+            app.logger.warning(f"Groq context generation failed: {e}")
 
     if openai_client is not None:
         try:
@@ -521,8 +550,8 @@ def _answer_query(query: str, top_k: int = 3) -> str:
             if _is_no_answer_response(answer) and _looks_like_general_medical_question(query):
                 return _general_medical_fallback(query)
             return answer
-        except Exception:
-            pass
+        except Exception as e:
+            app.logger.warning(f"OpenAI context generation failed: {e}")
 
     snippet = _extract_best_snippet(query, contexts)
     return f"Based on the uploaded documents: {snippet}"
@@ -641,14 +670,14 @@ def chat():
         return "Message is required.", 400
 
     try:
+        app.logger.info(f"Processing chat query: {msg[:100]}")
         answer = _answer_query(msg)
+        app.logger.info(f"Chat answer generated: {answer[:100]}")
+        return answer
     except Exception as exc:
-        return f"Failed to generate a response. {exc}", 500
-
-    app.logger.info("Chat query: %s", msg)
-    app.logger.info("Chat answer: %s", answer)
-
-    return answer
+        error_msg = f"Failed to generate a response: {str(exc)}"
+        app.logger.error(error_msg, exc_info=True)
+        return error_msg, 500
 
 
 @app.route("/api/status")
@@ -664,4 +693,11 @@ def api_status():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "8080")), debug=_env_bool("FLASK_DEBUG", "true"))
+    port = int(os.getenv("PORT", "5000"))
+    debug_mode = _env_bool("FLASK_DEBUG", "false")
+    
+    app.logger.info(f"Starting app on port {port} (debug={debug_mode})")
+    app.logger.info(f"Groq enabled: {_env_bool('USE_GROQ_CHAT', 'true')}")
+    app.logger.info(f"Backend status: {_backend_status()}")
+    
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
