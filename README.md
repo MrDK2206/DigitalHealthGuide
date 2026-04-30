@@ -1,3 +1,6 @@
+<img width="941" height="472" alt="image" src="https://github.com/user-attachments/assets/4ea2a86d-5238-4fd9-80ef-9b278acaef5f" />
+
+
 # End-to-End Medical Chatbot
 
 A Flask-based medical chatbot that answers questions from PDFs stored in the `Data/` folder. The project uses Pinecone for retrieval and returns answers grounded in the uploaded documents by default.
